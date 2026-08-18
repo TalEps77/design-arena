@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 470" width="560" height="470" role="img" aria-label="One target screen splits into an informed brief and a blind brief; each feeds six agents; both feed one gallery of twelve previews; you name a winner; it is applied to the real code.">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#8b949e"/>
+    </marker>
+    <style>
+      .box  { fill:none; stroke:#8b949e; stroke-width:1.4; }
+      .inf  { stroke:#2da44e; }
+      .bli  { stroke:#3b82f6; }
+      .acc  { stroke:#a371f7; }
+      .t    { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+              fill:#6e7781; text-anchor:middle; }
+      .h    { font-size:15px; font-weight:600; }
+      .s    { font-size:12.5px; }
+      .tag  { font-size:10px; font-weight:700; letter-spacing:.12em; }
+      .gi   { fill:#2da44e; }
+      .gb   { fill:#3b82f6; }
+      .line { stroke:#8b949e; stroke-width:1.4; fill:none; marker-end:url(#a); }
+    </style>
+  </defs>
+
+  <rect class="box" x="200" y="8" width="160" height="38" rx="19"/>
+  <text class="t h" x="280" y="32">one target screen</text>
+
+  <path class="line" d="M280 46 L280 62 Q280 70 272 70 L148 70 Q140 70 140 78 L140 92"/>
+  <path class="line" d="M280 46 L280 62 Q280 70 288 70 L412 70 Q420 70 420 78 L420 92"/>
+
+  <rect class="box inf" x="20" y="94" width="240" height="60" rx="9"/>
+  <text class="t tag gi" x="140" y="114">INFORMED</text>
+  <text class="t h" x="140" y="133">sees the current design</text>
+  <text class="t s" x="140" y="147">screenshots · source · tokens</text>
+
+  <rect class="box bli" x="300" y="94" width="240" height="60" rx="9"/>
+  <text class="t tag gb" x="420" y="114">BLIND</text>
+  <text class="t h" x="420" y="133">never sees it</text>
+  <text class="t s" x="420" y="147">function · copy · hierarchy</text>
+
+  <path class="line" d="M140 154 L140 186"/>
+  <path class="line" d="M420 154 L420 186"/>
+
+  <rect class="box inf" x="20" y="188" width="240" height="52" rx="9"/>
+  <text class="t h" x="140" y="211">6 agents</text>
+  <text class="t s" x="140" y="228">make it better</text>
+
+  <rect class="box bli" x="300" y="188" width="240" height="52" rx="9"/>
+  <text class="t h" x="420" y="211">6 agents</text>
+  <text class="t s" x="420" y="228">start from nothing</text>
+
+  <path class="line" d="M140 240 L140 262 Q140 270 148 270 L272 270 Q280 270 280 278 L280 292"/>
+  <path class="line" d="M420 240 L420 262 Q420 270 412 270 L288 270 Q280 270 280 278 L280 292"/>
+
+  <rect class="box acc" x="120" y="294" width="320" height="58" rx="9"/>
+  <text class="t h" x="280" y="317">competition-brief.html</text>
+  <text class="t s" x="280" y="335">12 live previews, paired blind vs informed</text>
+
+  <path class="line" d="M280 352 L280 382"/>
+
+  <rect class="box" x="180" y="384" width="200" height="36" rx="9"/>
+  <text class="t h" x="280" y="407">you name a winner</text>
+
+  <path class="line" d="M280 420 L280 434"/>
+
+  <rect class="box" x="150" y="436" width="260" height="30" rx="15"/>
+  <text class="t h" x="280" y="456">applied to the real code</text>
+</svg>

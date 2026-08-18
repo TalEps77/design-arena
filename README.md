@@ -18,22 +18,15 @@ Most AI redesigns polish what's already on screen — useful, until the current 
 
 So every design skill runs **twice**. Once *informed*: it sees your screenshots, CSS and tokens, and tries to beat them. Once *blind*: it sees only what the product **does** — copy, actions, hierarchy — and designs from nothing. Twelve self-contained HTML mockups, one gallery, you judge, the winner gets applied to your code.
 
-```mermaid
-flowchart LR
-    S(["one target screen"]) --> I["informed brief<br/>screenshots · source · tokens"]
-    S --> B["blind brief<br/>function · copy · hierarchy"]
-    I --> IA["6 informed agents<br/>make it better"]
-    B --> BA["6 blind agents<br/>start from nothing"]
-    IA --> G["competition-brief.html<br/>12 live previews, paired"]
-    BA --> G
-    G --> W{{"you name a winner"}}
-    W --> A(["applied to the real code"])
-```
+<div align="center">
+  <img src="assets/flow.svg" alt="One target screen splits into an informed brief and a blind brief; each feeds six agents; both feed one gallery of twelve paired previews; you name a winner; it gets applied to the real code." width="560">
+</div>
 
 ## Install
 
 ```bash
-git clone https://github.com/TalEps77/design-arena.git ~/.claude/skills/design-arena
+git clone https://github.com/TalEps77/design-arena.git \
+  ~/.claude/skills/design-arena
 ```
 
 That's the whole setup. The six design skills below don't ship with Claude Code, but **you don't chase them down** — on the first run the arena resolves each one, tells you what's missing and where it comes from, and installs it for you once you approve. Sources and manual commands: [`references/installing-skills.md`](references/installing-skills.md).
@@ -70,11 +63,11 @@ Each skill runs on **both** tracks, so you compare skill-vs-skill *and* polish-v
 
 ```
 design-arena-output/
-├── _context/                  # the two briefs + current-design screenshots
-├── informed/                  # one mockup per skill
-├── blind/                     # same filenames, built from scratch
-├── plans/                     # one apply-plan per mockup
-└── competition-brief.html     # ← the gallery you judge
+├── _context/          # the two briefs + screenshots
+├── informed/          # one mockup per skill
+├── blind/             # same, built from scratch
+├── plans/             # one apply-plan per mockup
+└── competition-brief.html   # ← what you judge
 ```
 
 Every agent writes exactly two files: its **mockup** and its **apply-plan** — direction, token set, which real files change, assets, motion notes, risks. Executable without having watched the agent work.
@@ -84,8 +77,8 @@ Every agent writes exactly two files: its **mockup** and its **apply-plan** — 
 The competing skills live in [`roster.txt`](roster.txt), one per line. It's the single source of truth — the preflight and the gallery builder both read it, nothing hardcodes a list.
 
 ```
-frontend-design         # the house default — the control entry
-apple-design            # motion-led — judge full-size, not from the still preview
+frontend-design    # the house default — the control
+apple-design       # motion-led — judge it full-size
 ```
 
 A trailing `# note` is printed on that skill's gallery cards. Swap entries freely, with one rule: **keep the lineages distinct.** Six forks of one upstream measure one taste six times — the exact convergence this exists to expose. Every line costs two subagents.

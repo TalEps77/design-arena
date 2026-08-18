@@ -86,6 +86,7 @@ def render(out_dir: Path) -> str:
     skills = ordered_skills(informed, blind)
 
     total = len(informed) + len(blind)
+    n_skills = len(skills)
 
     rows = []
     for skill in skills:
@@ -159,10 +160,11 @@ def render(out_dir: Path) -> str:
 <body>
   <div class="top">
     <h1>Design Arena</h1>
-    <p>{total} designs · 6 skills · each run once <b>informed</b> (saw the current
-    design, improved it) and once <b>blind</b> (functional spec only, built from
-    scratch). Click any preview to open it full-size; read its apply-plan below.
-    Pick a winner and I'll apply it.</p>
+    <p>{total} designs · {n_skills} skills · each run once <b>informed</b> (saw the
+    current design, improved it) and once <b>blind</b> (functional spec only, built
+    from scratch). Previews are scaled and cropped to the top of each page — open
+    one full-size before judging it, and read its apply-plan below. Pick a winner
+    and I'll apply it.</p>
     <div class="legend">
       <span><span class="dot informed"></span>informed — improved the real design</span>
       <span><span class="dot blind"></span>blind — designed from scratch</span>
@@ -177,11 +179,36 @@ def main():
     out_dir = Path(sys.argv[1] if len(sys.argv) > 1 else "design-arena-output")
     if not out_dir.is_dir():
         sys.exit(f"error: {out_dir} is not a directory")
+
+    informed = collect(out_dir / "informed")
+    blind = collect(out_dir / "blind")
+    if not informed and not blind:
+        sys.exit(
+            f"error: no mockups found under {out_dir}/informed or {out_dir}/blind — "
+            "the agents wrote nothing. Nothing to build a gallery from."
+        )
+
     brief = out_dir / "competition-brief.html"
     brief.write_text(render(out_dir), encoding="utf-8")
-    inf = len(collect(out_dir / "informed"))
-    bli = len(collect(out_dir / "blind"))
-    print(f"wrote {brief}  ({inf} informed + {bli} blind = {inf + bli} designs)")
+    print(f"wrote {brief}  "
+          f"({len(informed)} informed + {len(blind)} blind = "
+          f"{len(informed) + len(blind)} designs)")
+
+    # Report gaps explicitly: a silently short field changes the competition.
+    for track, found in (("informed", informed), ("blind", blind)):
+        gaps = [s for s in SKILL_ORDER if s not in found]
+        if gaps:
+            print(f"  missing {track}: {', '.join(gaps)}")
+    missing_plans = [
+        f"{t}-{s}"
+        for t, found in (("informed", informed), ("blind", blind))
+        for s in found
+        if not (out_dir / "plans" / f"{t}-{s}.md").exists()
+    ]
+    if missing_plans:
+        print(f"  missing plans: {', '.join(sorted(missing_plans))}")
+    print("  if previews render blank, the browser is blocking file:// frames — "
+          f"serve it: python3 -m http.server 8123 --directory {out_dir}")
 
 
 if __name__ == "__main__":

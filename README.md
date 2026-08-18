@@ -32,7 +32,7 @@ Each agent is required to invoke exactly one design skill and design in its voic
 - `design-taste-frontend`
 - `brandkit`
 
-A preflight step checks all six are installed before spawning anything — a missing skill silently turns a 12-way field into a 10-way one, and that quietly changes the competition.
+**None of the six ship with Claude Code** — they're third-party skills, so a fresh clone of Design Arena will find zero of them installed. A preflight step (`scripts/check_skills.sh`) resolves each one before spawning anything, and `references/installing-skills.md` tells the agent exactly where each comes from and which command installs it. A missing skill silently turns a 12-way field into a 10-way one, and that quietly changes the competition.
 
 ---
 
@@ -70,15 +70,55 @@ design-arena-output/
 
 ## Install
 
-Drop the skill into your Claude Code skills directory:
+### 1. The arena itself
 
 ```bash
 git clone https://github.com/TalEps77/design-arena.git ~/.claude/skills/design-arena
 ```
 
-Or copy just the two files (`SKILL.md` and `scripts/build_brief.py`) into `~/.claude/skills/design-arena/`.
+The directory name must be `design-arena` (it has to match the skill's `name:`). Keep `SKILL.md`, `scripts/` and `references/` together — the skill reads all three.
 
-Then make sure the six design skills above are installed too — Claude Code's `find-skills` skill can locate them.
+### 2. The six design skills
+
+Four of them live in one repo, so most of the work is a single command:
+
+```bash
+# gpt-taste, design-taste-frontend, high-end-visual-design, brandkit
+npx -y skills add Leonxlnx/taste-skill \
+  --skill gpt-taste design-taste-frontend high-end-visual-design brandkit \
+  --agent claude-code --global --yes
+
+# impeccable
+npx -y impeccable install
+```
+
+`ui-ux-pro-max` installs either from the CLI or as a plugin:
+
+```bash
+npm install -g ui-ux-pro-max-cli && uipro init --ai claude
+```
+
+```
+# …or, typed in Claude Code:
+/plugin marketplace add nextlevelbuilder/ui-ux-pro-max-skill
+/plugin install ui-ux-pro-max@ui-ux-pro-max-skill
+```
+
+| Skill | Upstream |
+|---|---|
+| `gpt-taste`, `design-taste-frontend`, `high-end-visual-design`, `brandkit` | [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) |
+| `impeccable` | [pbakaus/impeccable](https://github.com/pbakaus/impeccable) |
+| `ui-ux-pro-max` | [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) |
+
+Then verify — this is exactly what the skill runs at Step 0:
+
+```bash
+bash ~/.claude/skills/design-arena/scripts/check_skills.sh
+```
+
+It prints `OK` plus the **invoke-name** for each skill (a plugin-provided skill is invoked as `plugin:skill`, not by its bare name) or `MISSING`, and exits non-zero if anything is absent. If you skip this, the skill will run it for you and offer to install what's missing — see [`references/installing-skills.md`](references/installing-skills.md).
+
+The roster isn't sacred: `Leonxlnx/taste-skill` also ships `minimalist-ui`, `industrial-brutalist-ui` and others, and any design skill can take a slot. Just tell the arena which six you want.
 
 ---
 
@@ -99,6 +139,18 @@ The skill auto-triggers on those. Or invoke it directly:
 
 ---
 
+## Repo layout
+
+```
+design-arena/
+├── SKILL.md                      # the skill itself — the 6-step procedure
+├── references/
+│   └── installing-skills.md      # where each design skill comes from (read on preflight failure)
+└── scripts/
+    ├── check_skills.sh           # Step 0 preflight — resolves skills + invoke-names
+    └── build_brief.py            # Step 4 — builds the gallery
+```
+
 ## The gallery script
 
 `scripts/build_brief.py` is deterministic and standalone — no dependencies beyond Python 3:
@@ -107,7 +159,7 @@ The skill auto-triggers on those. Or invoke it directly:
 python3 scripts/build_brief.py design-arena-output
 ```
 
-It scans both track directories, embeds each mockup as a scaled live `<iframe>`, tags every card with its skill and blind/informed badge, pairs blind-vs-informed for the same skill side by side, links each card to its full-size mockup and its apply-plan, and writes `competition-brief.html`.
+It scans both track directories, embeds each mockup as a scaled live `<iframe>`, tags every card with its skill and blind/informed badge, pairs blind-vs-informed for the same skill side by side, links each card to its full-size mockup and its apply-plan, and writes `competition-brief.html`. It also reports which mockups and plans never showed up, and exits non-zero if nothing was produced at all — so a half-finished round can't quietly look like a complete one.
 
 ---
 
@@ -117,6 +169,8 @@ It scans both track directories, embeds each mockup as a scaled live `<iframe>`,
 - **Twelve parallel agents is heavy.** If the environment struggles, run two waves of six — but keep the briefs identical.
 - **A failed agent doesn't block the round.** Respawn that one, or mark it absent in the gallery.
 - **Applied means verified.** A redesign isn't done until the real screen renders it and you've seen a screenshot.
+- **It's an expensive run.** Twelve agents each researching a skill and writing a full page costs real time and tokens. The skill says so before it spawns; a smaller arena (two skills × two tracks) works the same way.
+- **Blank previews?** Your browser is refusing to frame `file://` pages. `python3 -m http.server 8123 --directory design-arena-output` and open the printed URL.
 
 ---
 

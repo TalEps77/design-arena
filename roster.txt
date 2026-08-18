@@ -1,0 +1,26 @@
+# design-arena roster — the design skills that compete.
+#
+# THIS FILE IS THE SINGLE SOURCE OF TRUTH. SKILL.md (Step 0), scripts/check_skills.sh
+# and scripts/build_brief.py all read it; nothing hardcodes a skill list.
+#
+# One skill per line, in the order the gallery should show them. Blank lines and
+# lines starting with # are ignored. Text after a "#" on a skill line is a note
+# rendered on that skill's gallery cards — use it for anything a scaled, static
+# preview cannot convey.
+#
+# Every entry costs two subagents (one blind, one informed). Six skills = 12 agents.
+#
+# Names must be the skill's own name, not a plugin-qualified one: the preflight
+# resolves "<plugin>:<skill>" for you. See references/installing-skills.md for
+# where each of these comes from.
+#
+# Editing this roster: keep lineages distinct. Six skills forked from the same
+# upstream measure one taste engine six times, which is the one thing the arena
+# is supposed to avoid.
+
+frontend-design         # the house default — the control entry. Does taste actually beat it?
+design-taste-frontend
+impeccable
+ui-ux-pro-max
+apple-design            # motion-led: springs, momentum, gestures — judge full-size, not from the still preview
+superdesign

@@ -14,15 +14,32 @@ import html
 import sys
 from pathlib import Path
 
-# Canonical skill order so the gallery reads consistently and pairs line up.
-SKILL_ORDER = [
-    "gpt-taste",
-    "ui-ux-pro-max",
-    "high-end-visual-design",
-    "impeccable",
-    "design-taste-frontend",
-    "brandkit",
-]
+ROSTER = Path(__file__).resolve().parent.parent / "roster.txt"
+
+
+def load_roster(path: Path = ROSTER):
+    """Read roster.txt -> ([skill, ...], {skill: note}).
+
+    One skill per line, in gallery order. Blank lines and lines starting with #
+    are ignored; text after a "#" on a skill line is a note shown on that skill's
+    cards. Returns an empty roster if the file is absent — the gallery then falls
+    back to whatever the agents actually produced.
+    """
+    order, notes = [], {}
+    if not path.is_file():
+        return order, notes
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        name, _, note = line.partition("#")
+        name = name.strip()
+        if not name:
+            continue
+        order.append(name)
+        if note.strip():
+            notes[name] = note.strip()
+    return order, notes
 
 
 def collect(track_dir: Path):
@@ -34,15 +51,19 @@ def collect(track_dir: Path):
     return found
 
 
-def ordered_skills(informed, blind):
-    """Known skills first (canonical order), then any extras alphabetically."""
+def ordered_skills(informed, blind, roster):
+    """Roster skills first (roster order), then anything unexpected, alphabetically.
+
+    A roster entry with no mockup on either track is dropped rather than rendered
+    as a pair of empty cards — it was never in this run.
+    """
     keys = set(informed) | set(blind)
-    known = [s for s in SKILL_ORDER if s in keys]
-    extra = sorted(k for k in keys if k not in SKILL_ORDER)
+    known = [s for s in roster if s in keys]
+    extra = sorted(k for k in keys if k not in roster)
     return known + extra
 
 
-def card(skill, track, mockup: Path, plan: Path, out_dir: Path):
+def card(skill, track, mockup: Path, plan: Path, out_dir: Path, note=""):
     """Build one gallery card (or an 'absent' placeholder)."""
     label = html.escape(skill)
     badge_cls = "informed" if track == "informed" else "blind"
@@ -64,10 +85,13 @@ def card(skill, track, mockup: Path, plan: Path, out_dir: Path):
     else:
         plan_link = '<span class="noplan">no plan</span>'
 
+    note_html = f'<p class="note">{html.escape(note)}</p>' if note else ""
+
     return f"""
       <article class="card">
         <header><span class="skill">{label}</span>
           <span class="badge {badge_cls}">{badge_txt}</span></header>
+        {note_html}
         <div class="preview">
           <iframe src="{rel}" loading="lazy" scrolling="no"
                   sandbox="allow-scripts allow-same-origin"></iframe>
@@ -80,20 +104,22 @@ def card(skill, track, mockup: Path, plan: Path, out_dir: Path):
 
 
 def render(out_dir: Path) -> str:
+    roster, notes = load_roster()
     informed = collect(out_dir / "informed")
     blind = collect(out_dir / "blind")
     plans = out_dir / "plans"
-    skills = ordered_skills(informed, blind)
+    skills = ordered_skills(informed, blind, roster)
 
     total = len(informed) + len(blind)
     n_skills = len(skills)
 
     rows = []
     for skill in skills:
+        note = notes.get(skill, "")
         inf = card(skill, "informed", informed.get(skill),
-                   plans / f"informed-{skill}.md", out_dir)
+                   plans / f"informed-{skill}.md", out_dir, note)
         bli = card(skill, "blind", blind.get(skill),
-                   plans / f"blind-{skill}.md", out_dir)
+                   plans / f"blind-{skill}.md", out_dir, note)
         rows.append(f"""
     <section class="pair">
       <h2>{html.escape(skill)}</h2>
@@ -155,6 +181,8 @@ def render(out_dir: Path) -> str:
     border-bottom:1px solid var(--line); }}
   .card footer a:hover {{ border-color:var(--ink); }}
   .noplan {{ color:var(--muted); }}
+  .note {{ margin:0; padding:0 16px 12px; font-size:12.5px; line-height:1.45;
+    color:var(--muted); }}
 </style>
 </head>
 <body>
@@ -195,8 +223,11 @@ def main():
           f"{len(informed) + len(blind)} designs)")
 
     # Report gaps explicitly: a silently short field changes the competition.
+    roster, _ = load_roster()
+    if not roster:
+        print(f"  note: no roster at {ROSTER} — gallery ordered by what was found")
     for track, found in (("informed", informed), ("blind", blind)):
-        gaps = [s for s in SKILL_ORDER if s not in found]
+        gaps = [s for s in roster if s not in found]
         if gaps:
             print(f"  missing {track}: {', '.join(gaps)}")
     missing_plans = [

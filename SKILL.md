@@ -4,8 +4,8 @@ description: >-
   Run a 12-way design competition ("bake-off") on a UI. Spins up 12 subagents —
   6 INFORMED (see the current design, make it better) and 6 BLIND (see only what
   the product DOES, design from scratch, never seeing the current look) — each
-  invoking one of six design skills (gpt-taste, ui-ux-pro-max,
-  high-end-visual-design, impeccable, design-taste-frontend, brandkit). Every
+  invoking one of six design skills (frontend-design, design-taste-frontend,
+  impeccable, ui-ux-pro-max, apple-design, superdesign). Every
   agent ships a real self-contained HTML mockup. Output: one HTML gallery brief
   with all 12 live previews (tagged blind/informed + skill) plus a per-design
   markdown apply-plan, so the user picks a winner to apply. Use WHENEVER the user
@@ -36,8 +36,31 @@ direction" vs "start clean" for the same taste engine. That contrast is the whol
 point: sometimes the current design is a local maximum and only a blind agent
 escapes it.
 
-The six skills: `gpt-taste`, `ui-ux-pro-max`, `high-end-visual-design`,
-`impeccable`, `design-taste-frontend`, `brandkit`.
+**The roster lives in `roster.txt`** — one skill per line, in gallery order. It is
+the single source of truth: Step 0's preflight and the gallery builder both read
+it, and nothing hardcodes a skill list. Read it at the start of a run; if the user
+wants a different field, edit that file rather than improvising a list here.
+
+The default six, each from a different upstream so the arena measures six taste
+engines and not one engine six times:
+
+| Skill | Why it's in the field |
+|---|---|
+| `frontend-design` | Anthropic's official baseline — the **control**. It is the closest thing to "what you get without shopping for third-party taste"; if no other entry beats it, the extra installs aren't earning their keep, and that is a finding worth reporting. |
+| `design-taste-frontend` | The anti-slop taste engine; strong on layout and restraint. |
+| `impeccable` | Strict design-context protocol, OKLCH color, modular type scales. |
+| `ui-ux-pro-max` | Databases of styles, palettes and font pairings; systematic. |
+| `apple-design` | Fluid-interface principles — springs, momentum, materials, optical type. |
+| `superdesign` | Declares a "Design Read" and sets variance/motion/density dials first. |
+
+A roster line may carry a trailing `# note` — the gallery prints it on that
+skill's cards. Use it for anything a scaled, static preview cannot show
+(`apple-design` ships with one, since its motion is invisible in a still).
+
+Changing the roster is a supported edit, with one rule: **keep the lineages
+distinct.** Six skills forked from the same upstream produce six variations of one
+taste, which is the exact failure the arena exists to avoid. Every line costs two
+subagents.
 
 **Say the cost out loud before you start.** Twelve subagents each researching a
 skill and writing a full HTML page is a large run — tens of minutes and a lot of
@@ -49,8 +72,9 @@ the structure works at any even size.
 
 ## Step 0 — Preflight: skills must be installed
 
-All twelve agents depend on the six skills above. **None of them ship with Claude
-Code** — they are third-party skills, so a fresh install of design-arena will
+Every agent depends on a skill from `roster.txt`, and **none of them ship with
+Claude Code** — `frontend-design` is Anthropic-maintained but still installed
+separately, and the rest are third-party. A fresh install of design-arena will
 normally find zero of them. Resolve them before spawning anything:
 
 ```bash
@@ -71,7 +95,7 @@ installed as part of a plugin is invoked as `<plugin>:<skill>` (e.g.
 mockup filename stays the plain skill name.
 
 If anything is `MISSING`, **stop and read `references/installing-skills.md`** —
-it names the upstream repo and the exact install command for each of the six.
+it names the upstream repo and the exact install command for every roster skill.
 Then:
 
 1. Tell the user which are missing and where they'd come from (name the repos —
@@ -84,8 +108,9 @@ Then:
 Don't silently drop a missing skill and run 10 agents — the user asked for a fair
 six-skill field, and a missing skill quietly changes the competition. If the user
 declines to install one, either substitute another design skill or run a smaller
-field on purpose — and either way, state the final roster in the gallery so the
-comparison is honest.
+field on purpose. Whichever it is, **edit `roster.txt` to match what actually
+ran** — that's what the gallery renders, so the file staying honest is what keeps
+the comparison honest.
 
 ---
 
@@ -261,8 +286,9 @@ python3 scripts/build_brief.py design-arena-output
 It scans `informed/` and `blind/`, embeds each mockup as a scaled live `<iframe>`
 preview in a responsive grid, tags each card with its skill + blind/informed
 badge, links each to its full-size mockup and its apply-plan, and writes
-`design-arena-output/competition-brief.html`. It pairs blind vs informed for the
-same skill side by side so the contrast is easy to read. It prints a per-track
+`design-arena-output/competition-brief.html`. It reads `roster.txt` for the card
+order and per-skill notes, and pairs blind vs informed for the same skill side by
+side so the contrast is easy to read. It prints a per-track
 summary and exits non-zero if it found no mockups at all — read that output
 instead of assuming the gallery is complete.
 
@@ -308,8 +334,13 @@ Say plainly: twelve designs, six skills each run blind and informed, click any
 preview to open it full-size, read the plan link under each. The card previews are
 scaled screenshots of the top ~1000px — tell the user to open a design full-size
 before judging it, since a preview crops long pages. Ask them to name a winner
-(e.g. "informed / high-end-visual-design" or "blind / brandkit"). Don't push your
-own favorite unless asked — the whole apparatus exists so *they* choose.
+(e.g. "informed / superdesign" or "blind / apple-design"). Don't push your own
+favorite unless asked — the whole apparatus exists so *they* choose.
+
+One thing you should volunteer, though: **how the control did.** If
+`frontend-design` — the skill Claude already has — held its own against the
+specialist entries, say so. The user is entitled to know that the extra six
+installs didn't buy them much on this screen.
 
 ---
 
@@ -340,18 +371,18 @@ design-arena-output/
 │   ├── informed-brief.md      # full visual + functional brief
 │   ├── blind-brief.md         # functional-only, visuals stripped
 │   └── shots/                 # current-design screenshots (informed only)
-├── informed/                  # 6 mockups (one per skill)
-│   ├── gpt-taste.html
-│   ├── ui-ux-pro-max.html
-│   ├── high-end-visual-design.html
-│   ├── impeccable.html
+├── informed/                  # one mockup per roster skill
+│   ├── frontend-design.html
 │   ├── design-taste-frontend.html
-│   └── brandkit.html
-├── blind/                     # 6 mockups (one per skill), built from scratch
-│   └── … (same six filenames)
-├── plans/                     # 12 apply-plans
-│   ├── informed-gpt-taste.md
-│   ├── blind-gpt-taste.md
+│   ├── impeccable.html
+│   ├── ui-ux-pro-max.html
+│   ├── apple-design.html
+│   └── superdesign.html
+├── blind/                     # same filenames, built from scratch
+│   └── …
+├── plans/                     # one apply-plan per mockup
+│   ├── informed-frontend-design.md
+│   ├── blind-frontend-design.md
 │   └── …
 └── competition-brief.html     # generated gallery — the thing the user judges
 ```
@@ -361,8 +392,9 @@ design-arena-output/
 ```
 design-arena/
 ├── SKILL.md
+├── roster.txt                 # the competing skills — single source of truth
 ├── references/
-│   └── installing-skills.md   # where each of the six design skills comes from
+│   └── installing-skills.md   # where each roster skill comes from
 └── scripts/
     ├── check_skills.sh        # Step 0 preflight — resolves invoke-names
     └── build_brief.py         # Step 4 gallery builder

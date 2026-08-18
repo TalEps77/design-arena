@@ -23,16 +23,22 @@ If a blind agent could reconstruct your current design from its brief, the brief
 
 ## The six taste engines
 
-Each agent is required to invoke exactly one design skill and design in its voice:
+Each agent is required to invoke exactly one design skill and design in its voice. The roster lives in [`roster.txt`](roster.txt) — one skill per line — and it's the single source of truth: the preflight and the gallery builder both read it, nothing hardcodes a list.
 
-- `gpt-taste`
-- `ui-ux-pro-max`
-- `high-end-visual-design`
-- `impeccable`
-- `design-taste-frontend`
-- `brandkit`
+The default six deliberately come from **six different upstreams**, so the arena measures six taste engines rather than one engine six times:
 
-**None of the six ship with Claude Code** — they're third-party skills, so a fresh clone of Design Arena will find zero of them installed. A preflight step (`scripts/check_skills.sh`) resolves each one before spawning anything, and `references/installing-skills.md` tells the agent exactly where each comes from and which command installs it. A missing skill silently turns a 12-way field into a 10-way one, and that quietly changes the competition.
+| Skill | Upstream | Why it's in the field |
+|---|---|---|
+| `frontend-design` | [anthropics/skills](https://github.com/anthropics/skills) | Anthropic's official baseline — the **control**. If nothing beats it, the other five aren't earning their install. |
+| `design-taste-frontend` | [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) | The anti-slop engine; layout and restraint |
+| `impeccable` | [pbakaus/impeccable](https://github.com/pbakaus/impeccable) | Strict design-context protocol, OKLCH, modular scales |
+| `ui-ux-pro-max` | [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | Databases of styles, palettes, font pairings |
+| `apple-design` | [emilkowalski/skills](https://github.com/emilkowalski/skills) | Fluid interfaces — springs, momentum, materials, optical type |
+| `superdesign` | [superdesigndev/superdesign-skill](https://github.com/superdesigndev/superdesign-skill) | Declares a "Design Read", sets variance/motion/density dials |
+
+**None of them ship with Claude Code** — `frontend-design` is Anthropic-maintained but installed separately, the rest are third-party — so a fresh clone of Design Arena finds zero of them installed. A preflight step (`scripts/check_skills.sh`) resolves each one before spawning anything, and [`references/installing-skills.md`](references/installing-skills.md) tells the agent exactly where each comes from and which command installs it. A missing skill silently turns a 12-way field into a 10-way one, and that quietly changes the competition.
+
+Swap the roster freely — one rule: **keep the lineages distinct**. Six forks of one upstream is the exact thing the blind/informed split is built to expose. A roster line can also carry a trailing `# note`, which the gallery prints on that skill's cards; `apple-design` ships with one, because a scaled still can't show motion.
 
 ---
 
@@ -60,9 +66,9 @@ design-arena-output/
 │   ├── informed-brief.md      # full visual + functional brief
 │   ├── blind-brief.md         # functional-only, visuals stripped
 │   └── shots/                 # current-design screenshots (informed only)
-├── informed/                  # 6 mockups, one per skill
-├── blind/                     # 6 mockups, same six filenames
-├── plans/                     # 12 apply-plans
+├── informed/                  # one mockup per roster skill
+├── blind/                     # same filenames, built from scratch
+├── plans/                     # one apply-plan per mockup
 └── competition-brief.html     # the gallery you judge
 ```
 
@@ -80,15 +86,18 @@ The directory name must be `design-arena` (it has to match the skill's `name:`).
 
 ### 2. The six design skills
 
-Four of them live in one repo, so most of the work is a single command:
+Four install with the same CLI:
 
 ```bash
-# gpt-taste, design-taste-frontend, high-end-visual-design, brandkit
-npx -y skills add Leonxlnx/taste-skill \
-  --skill gpt-taste design-taste-frontend high-end-visual-design brandkit \
-  --agent claude-code --global --yes
+npx -y skills add anthropics/skills           --skill frontend-design       --agent claude-code --global --yes
+npx -y skills add Leonxlnx/taste-skill        --skill design-taste-frontend --agent claude-code --global --yes
+npx -y skills add emilkowalski/skills         --skill apple-design          --agent claude-code --global --yes
+npx -y skills add superdesigndev/superdesign-skill                          --agent claude-code --global --yes
+```
 
-# impeccable
+`impeccable` has its own installer:
+
+```bash
 npx -y impeccable install
 ```
 
@@ -104,12 +113,6 @@ npm install -g ui-ux-pro-max-cli && uipro init --ai claude
 /plugin install ui-ux-pro-max@ui-ux-pro-max-skill
 ```
 
-| Skill | Upstream |
-|---|---|
-| `gpt-taste`, `design-taste-frontend`, `high-end-visual-design`, `brandkit` | [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) |
-| `impeccable` | [pbakaus/impeccable](https://github.com/pbakaus/impeccable) |
-| `ui-ux-pro-max` | [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) |
-
 Then verify — this is exactly what the skill runs at Step 0:
 
 ```bash
@@ -118,7 +121,7 @@ bash ~/.claude/skills/design-arena/scripts/check_skills.sh
 
 It prints `OK` plus the **invoke-name** for each skill (a plugin-provided skill is invoked as `plugin:skill`, not by its bare name) or `MISSING`, and exits non-zero if anything is absent. If you skip this, the skill will run it for you and offer to install what's missing — see [`references/installing-skills.md`](references/installing-skills.md).
 
-The roster isn't sacred: `Leonxlnx/taste-skill` also ships `minimalist-ui`, `industrial-brutalist-ui` and others, and any design skill can take a slot. Just tell the arena which six you want.
+To change the field, edit [`roster.txt`](roster.txt) — that's all. `Leonxlnx/taste-skill` alone also ships `high-end-visual-design`, `minimalist-ui` and `industrial-brutalist-ui`, and any design skill can take a slot. Every line costs two subagents.
 
 ---
 
@@ -144,11 +147,12 @@ The skill auto-triggers on those. Or invoke it directly:
 ```
 design-arena/
 ├── SKILL.md                      # the skill itself — the 6-step procedure
+├── roster.txt                    # the competing skills — single source of truth
 ├── references/
-│   └── installing-skills.md      # where each design skill comes from (read on preflight failure)
+│   └── installing-skills.md      # where each roster skill comes from (read on preflight failure)
 └── scripts/
-    ├── check_skills.sh           # Step 0 preflight — resolves skills + invoke-names
-    └── build_brief.py            # Step 4 — builds the gallery
+    ├── check_skills.sh           # Step 0 preflight — reads roster.txt, resolves invoke-names
+    └── build_brief.py            # Step 4 — reads roster.txt, builds the gallery
 ```
 
 ## The gallery script
